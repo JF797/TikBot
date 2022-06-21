@@ -1,6 +1,7 @@
 # imports
 import discord
 import asyncio
+import wget
 
 client = discord.Client()
 
@@ -19,10 +20,8 @@ def convertVmToTrue(message):
     return videoLink
 
 def downloadLink(link):
+    videoFile = wget.download(link, out="output.mp4")
     return
-
-
-
 
 def checkForLink(message):
     userMessage = str(message.content)
