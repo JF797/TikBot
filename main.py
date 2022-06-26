@@ -4,21 +4,27 @@ import asyncio
 import requests
 import wget
 import re
+import os
 
 client = discord.Client()
 
-TOKEN = ""
-
 linkFound = False
+
+TOKEN = "[DISCORD BOT TOKEN]"
+
 
 @client.event
 async def on_ready():
     print(f"logged in as {client.user.name}")
     print(f"with user ID: {client.user.id}")
 
+
 def splitLink(url):
     return url.split('?')[0]
 
+def removeOriginalFile(fileName):
+    os.remove(fileName)
+    return
 
 def convertVmToTrue(message):
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0"}
@@ -61,24 +67,13 @@ def linkRequest(link):
     print(response.text)
 
 
-
 def checkForLink(message):
     userMessage = str(message.content)
     linkSearchCriteria = "vm.tiktok.com"
-
-    if linkSearchCriteria in userMessage:
-        print('link found')
-        # convert vm link to true link
-        linkToDownload = convertVmToTrue(userMessage)
-        # splits out the bit we don't need (after the '?')
-        linkToDownload = splitLink(linkToDownload)
-        print(linkToDownload)
-        # gets the .mp4 link via the api
-        linkToDownload = getVideoLink(linkToDownload)
-        # download the provided .mp4 link 
-        downloadLink(linkToDownload)
+    if linkSearchCriteria in userMessage.lower():
+        return True
     else:
-        return
+        return False
 
 # logging
 @client.event 
@@ -90,6 +85,28 @@ async def on_message(message):
 
     if message.author == client.user:
         return
-    checkForLink(message)
+
+    # commands
+    if userMessage.lower() == '!help':
+        await message.channel.send(f"This is a help message for {username}")
+        return
+
+    linkFound = checkForLink(message)
+
+    if linkFound == True:
+        await message.channel.send(f"I found a TikTok link from {username}, let me download that for you!")
+        # convert vm link to true link
+        linkToDownload = convertVmToTrue(userMessage)
+        # splits out the bit we don't need (after the '?')
+        linkToDownload = splitLink(linkToDownload)
+        # gets the .mp4 link via the api
+        linkToDownload = getVideoLink(linkToDownload)
+        # download the provided .mp4 link 
+        downloadLink(linkToDownload)
+        # upload video to channel
+        await message.channel.send("Here is the original...")
+        await message.channel.send(file=discord.File(r'tmp.mp4'))
+        removeOriginalFile('tmp.mp4')
+        return
 
 client.run(TOKEN)
